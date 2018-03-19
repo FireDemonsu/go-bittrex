@@ -8,6 +8,7 @@ import (
 
 	"github.com/OpinionatedGeek/go-cloudflare-scraper"
 	"github.com/OpinionatedGeek/signalr"
+	"log"
 )
 
 type OrderUpdate struct {
@@ -55,6 +56,7 @@ func doAsyncTimeout(f func() error, tmFunc func(error), timeout time.Duration) e
 }
 
 func sendStateAsync(dataCh chan<- ExchangeState, st ExchangeState) {
+	log.Println(st)
 	select {
 	case dataCh <- st:
 	default:
@@ -75,9 +77,11 @@ func parseStates(messages []json.RawMessage, dataCh chan<- ExchangeState, market
 		if err := json.Unmarshal(msg, &st); err != nil {
 			continue
 		}
+		log.Println("parseStates", st)
 		if st.MarketName != market {
 			continue
 		}
+
 		sendStateAsync(dataCh, st)
 	}
 }
@@ -86,6 +90,7 @@ func parseStates(messages []json.RawMessage, dataCh chan<- ExchangeState, market
 // Updates will be sent to dataCh.
 // To stop subscription, send to, or close 'stop'.
 func (b *Bittrex) SubscribeExchangeUpdate(market string, dataCh chan<- ExchangeState, stop <-chan bool) error {
+	log.Println("SubscribeExchangeUpdate", market)
 	transport := http.DefaultTransport
 	if b.client.httpClient != nil && b.client.httpClient.Transport != nil {
 		transport = b.client.httpClient.Transport
